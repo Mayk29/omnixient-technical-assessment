@@ -1,4 +1,7 @@
-import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component, OnInit, OnDestroy,
+  inject, signal, computed, ChangeDetectionStrategy
+} from '@angular/core';
 import { DatePipe, TitleCasePipe, DecimalPipe } from '@angular/common';
 import { ExchangeRateService } from '../../services/exchange-rate.service';
 import { ExchangeRate, ExchangeRatesResponse } from '../../models/exchange-rate.model';
@@ -11,8 +14,9 @@ import { ExchangeRate, ExchangeRatesResponse } from '../../models/exchange-rate.
   styleUrl: './exchange-rates.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExchangeRatesComponent implements OnInit {
+export class ExchangeRatesComponent implements OnInit, OnDestroy {
   private readonly service = inject(ExchangeRateService);
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   response     = signal<ExchangeRatesResponse | null>(null);
   loading      = signal(false);
@@ -20,22 +24,37 @@ export class ExchangeRatesComponent implements OnInit {
   search       = signal('');
   selectedDate = signal('');
 
+  // Live clock — updates every second
+  currentTime = signal<Date>(new Date());
+
   readonly skeletonRows = [1, 2, 3, 4, 5, 6, 7, 8];
 
   filteredRates = computed(() => {
     const term  = this.search().toLowerCase().trim();
     const rates = this.response()?.rates ?? [];
     if (!term) return rates;
-    return rates.filter(
-      r =>
-        r.currencyCode.toLowerCase().includes(term) ||
-        r.currencyName.toLowerCase().includes(term) ||
-        r.country.toLowerCase().includes(term)
+    return rates.filter(r =>
+      r.currencyCode.toLowerCase().includes(term) ||
+      r.currencyName.toLowerCase().includes(term) ||
+      r.country.toLowerCase().includes(term)
     );
   });
 
+  /**
+   * Converts the API date string "yyyy-MM-dd" to a proper Date object
+   * by appending T00:00:00 so DatePipe parses it correctly in all browsers.
+   */
+  parseApiDate(dateStr: string): Date {
+    return new Date(dateStr + 'T00:00:00');
+  }
+
   ngOnInit(): void {
     this.loadRates();
+    this.clockTimer = setInterval(() => this.currentTime.set(new Date()), 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.clockTimer !== null) clearInterval(this.clockTimer);
   }
 
   loadRates(): void {
@@ -56,10 +75,15 @@ export class ExchangeRatesComponent implements OnInit {
 
   onDateChange(value: string): void {
     this.selectedDate.set(value);
+    this.loadRates();
   }
 
   onSearch(value: string): void {
     this.search.set(value);
+  }
+
+  clearSearch(): void {
+    this.search.set('');
   }
 
   get today(): string {

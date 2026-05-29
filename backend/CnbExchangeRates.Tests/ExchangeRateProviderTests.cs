@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using CnbExchangeRates.Configuration;
 using CnbExchangeRates.Services;
 using FluentAssertions;
@@ -11,16 +10,16 @@ namespace CnbExchangeRates.Tests;
 
 public class ExchangeRateProviderTests
 {
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────
 
     private static (ExchangeRateProvider provider, MockHttpMessageHandler mockHttp) CreateSut()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var mockHttp   = new MockHttpMessageHandler();
         var httpClient = mockHttp.ToHttpClient();
 
         var options = Options.Create(new CnbApiOptions
         {
-            BaseUrl         = "https://api.cnb.cz/cnbapi",
+            BaseUrl          = "https://api.cnb.cz/cnbapi",
             DailyExRatesPath = "/exrates/daily"
         });
 
@@ -72,7 +71,7 @@ public class ExchangeRateProviderTests
         var result = await sut.GetDailyRatesAsync();
 
         result.Should().NotBeNull();
-        result.Date.Should().Be(new DateOnly(2024, 5, 14));
+        result.Date.Should().Be("2024-05-14");
         result.Rates.Should().HaveCount(2);
 
         var usd = result.Rates.Single(r => r.CurrencyCode == "USD");
@@ -85,14 +84,12 @@ public class ExchangeRateProviderTests
     public async Task GetDailyRatesAsync_AppendsDateQueryParam_WhenDateIsProvided()
     {
         var (sut, mockHttp) = CreateSut();
-        var requestedDate = new DateOnly(2024, 1, 15);
 
         mockHttp
-            .When($"https://api.cnb.cz/cnbapi/exrates/daily?date=2024-01-15*")
+            .When("https://api.cnb.cz/cnbapi/exrates/daily?date=2024-01-15*")
             .Respond("application/json", ValidCnbJson);
 
-        // If the URL doesn't match, MockHttp throws — this validates the query param
-        var act = () => sut.GetDailyRatesAsync(requestedDate);
+        var act = () => sut.GetDailyRatesAsync(new DateOnly(2024, 1, 15));
         await act.Should().NotThrowAsync();
     }
 

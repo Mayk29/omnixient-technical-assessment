@@ -13,16 +13,17 @@ public record ExchangeRate(
 
 /// <summary>
 /// The full response returned by our API endpoint.
+/// Date is an ISO string "yyyy-MM-dd" for safe JSON serialisation across all clients.
 /// </summary>
 public record ExchangeRatesResponse(
-    DateOnly Date,
+    string Date,
     IReadOnlyList<ExchangeRate> Rates
 );
 
 // ─── CNB API response shape (deserialised internally) ──────────────────────
 
 internal record CnbApiResponse(
-    DateOnly ValidFor,
+    string ValidFor,
     IReadOnlyList<CnbRate> Rates
 );
 

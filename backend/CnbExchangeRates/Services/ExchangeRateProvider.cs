@@ -77,7 +77,7 @@ public sealed class ExchangeRateProvider : IExchangeRateProvider
 
     private string BuildRequestUrl(DateOnly? date)
     {
-        var path = _options.DailyExRatesPath;
+        var path  = _options.DailyExRatesPath;
         var query = date.HasValue
             ? $"?date={date.Value:yyyy-MM-dd}&lang=EN"
             : "?lang=EN";
@@ -95,6 +95,7 @@ public sealed class ExchangeRateProvider : IExchangeRateProvider
                 Rate:         r.Rate))
             .ToList();
 
+        // ValidFor comes from CNB as "yyyy-MM-dd" string — pass it through as-is
         return new ExchangeRatesResponse(cnbResponse.ValidFor, rates);
     }
 }
