@@ -87,9 +87,11 @@
         <h1 class="topbar__title">Daily Exchange Rates</h1>
         @if (response()) {
           <!-- CNB fixing date returned from the API -->
-          <span class="topbar__badge">
-            {{ parseApiDate(response()!.date) | date:'EEEE, MMMM d, y' }}
-          </span>
+          @if (parseApiDate(response()!.date); as fixingDate) {
+            <span class="topbar__badge">
+              {{ fixingDate | date:'EEEE, MMMM d, y' }}
+            </span>
+          }
         }
       </div>
       <div class="topbar__right">

@@ -22,6 +22,8 @@ export class ExchangeRatesComponent implements OnInit, OnDestroy {
   loading      = signal(false);
   error        = signal<string | null>(null);
   search       = signal('');
+
+  // Stored as yyyy-MM-dd (what the date input natively uses)
   selectedDate = signal('');
 
   // Live clock — updates every second
@@ -41,11 +43,24 @@ export class ExchangeRatesComponent implements OnInit, OnDestroy {
   });
 
   /**
-   * Converts the API date string "yyyy-MM-dd" to a proper Date object
-   * by appending T00:00:00 so DatePipe parses it correctly in all browsers.
+   * Safely converts "yyyy-MM-dd" API string → Date for DatePipe.
+   * Appends T00:00:00 to force local-time parsing in all browsers.
+   * Returns null if the string is missing or malformed so DatePipe
+   * never receives an Invalid Date.
    */
-  parseApiDate(dateStr: string): Date {
-    return new Date(dateStr + 'T00:00:00');
+  parseApiDate(dateStr: string | null | undefined): Date | null {
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /**
+   * The date input always gives us yyyy-MM-dd natively.
+   * We pass it straight to the API which also expects yyyy-MM-dd.
+   */
+  onDateChange(value: string): void {
+    this.selectedDate.set(value);
+    this.loadRates();
   }
 
   ngOnInit(): void {
@@ -73,11 +88,6 @@ export class ExchangeRatesComponent implements OnInit, OnDestroy {
     });
   }
 
-  onDateChange(value: string): void {
-    this.selectedDate.set(value);
-    this.loadRates();
-  }
-
   onSearch(value: string): void {
     this.search.set(value);
   }
@@ -86,6 +96,7 @@ export class ExchangeRatesComponent implements OnInit, OnDestroy {
     this.search.set('');
   }
 
+  /** Max date for the date picker — today in yyyy-MM-dd */
   get today(): string {
     return new Date().toISOString().split('T')[0];
   }
