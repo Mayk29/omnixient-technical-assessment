@@ -1,0 +1,115 @@
+<div class="page">
+  <!-- Header -->
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__title">
+        <span class="header__flag">🇨🇿</span>
+        <div>
+          <h1>CNB Exchange Rates</h1>
+          <p class="header__subtitle">Czech National Bank · Daily fixing</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <section class="controls">
+    <div class="controls__inner">
+      <div class="controls__group">
+        <label class="label" for="date-input">Date</label>
+        <input
+          id="date-input"
+          class="input"
+          type="date"
+          [max]="today"
+          [value]="selectedDate()"
+          (change)="onDateChange($any($event.target).value)"
+        />
+      </div>
+
+      <div class="controls__group controls__group--grow">
+        <label class="label" for="search-input">Search</label>
+        <input
+          id="search-input"
+          class="input"
+          type="search"
+          placeholder="Filter by currency, code, or country…"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      <div class="controls__group controls__group--action">
+        <label class="label">&nbsp;</label>
+        <button class="btn btn--primary" (click)="loadRates()" [disabled]="loading()">
+          @if (loading()) { Loading… } @else { Refresh }
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Error banner -->
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>Error:</strong> {{ error() }}
+      <button class="alert__dismiss" (click)="loadRates()">Try again</button>
+    </div>
+  }
+
+  <!-- Loading skeleton -->
+  @if (loading() && !response()) {
+    <div class="skeleton-wrapper" aria-busy="true" aria-label="Loading exchange rates">
+      @for (i of skeletonRows; track i) {
+        <div class="skeleton-row"></div>
+      }
+    </div>
+  }
+
+  <!-- Rates table -->
+  @if (!loading() || response()) {
+    <main class="table-wrapper">
+      @if (response()) {
+        <div class="meta">
+          Rates valid for
+          <strong>{{ response()!.date | date:'MMMM d, y' }}</strong>
+          · {{ filteredRates().length }} currencies
+        </div>
+      }
+
+      @if (filteredRates().length > 0) {
+        <table class="rates-table" aria-label="CNB exchange rates">
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Currency</th>
+              <th scope="col">Country</th>
+              <th scope="col" class="col--num">Rate (CZK)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rate of filteredRates(); track rate.currencyCode) {
+              <tr>
+                <td><span class="badge">{{ rate.currencyCode }}</span></td>
+                <td>{{ rate.currencyName }}</td>
+                <td class="col--muted">{{ rate.country }}</td>
+                <td class="col--num">{{ formatRate(rate) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      @if (!loading() && filteredRates().length === 0 && !error()) {
+        <div class="empty">
+          <p>No currencies match "<strong>{{ search() }}</strong>".</p>
+        </div>
+      }
+    </main>
+  }
+
+  <footer class="footer">
+    Data sourced from the
+    <a href="https://api.cnb.cz/cnbapi/swagger-ui.html" target="_blank" rel="noopener">Czech National Bank public API</a>.
+    Rates are published on each business day around 14:30 CET.
+  </footer>
+</div>
