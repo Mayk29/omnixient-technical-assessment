@@ -1,14 +1,12 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe, DecimalPipe } from '@angular/common';
 import { ExchangeRateService } from '../../services/exchange-rate.service';
 import { ExchangeRate, ExchangeRatesResponse } from '../../models/exchange-rate.model';
 
 @Component({
   selector: 'app-exchange-rates',
   standalone: true,
-  // Angular 18: @if / @for are built-in — no CommonModule needed.
-  // DatePipe is still required for the date format pipe in the template.
-  imports: [DatePipe],
+  imports: [DatePipe, TitleCasePipe, DecimalPipe],
   templateUrl: './exchange-rates.component.html',
   styleUrl: './exchange-rates.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -16,14 +14,12 @@ import { ExchangeRate, ExchangeRatesResponse } from '../../models/exchange-rate.
 export class ExchangeRatesComponent implements OnInit {
   private readonly service = inject(ExchangeRateService);
 
-  // State
   response     = signal<ExchangeRatesResponse | null>(null);
   loading      = signal(false);
   error        = signal<string | null>(null);
   search       = signal('');
   selectedDate = signal('');
 
-  // Used by @for in the skeleton loader
   readonly skeletonRows = [1, 2, 3, 4, 5, 6, 7, 8];
 
   filteredRates = computed(() => {
@@ -66,12 +62,6 @@ export class ExchangeRatesComponent implements OnInit {
     this.search.set(value);
   }
 
-  /** Format rate with correct per-unit label, e.g. "22.589 CZK / 1 USD" */
-  formatRate(rate: ExchangeRate): string {
-    return `${rate.rate.toFixed(3)} CZK / ${rate.amount} ${rate.currencyCode}`;
-  }
-
-  /** Today's date string for the max attribute on the date input */
   get today(): string {
     return new Date().toISOString().split('T')[0];
   }
